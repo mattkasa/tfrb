@@ -24,9 +24,9 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'bundler', '~> 2.0'
   spec.add_development_dependency 'rake', '~> 10.0'
   spec.add_development_dependency 'rspec', '~> 3.0'
-  spec.add_development_dependency 'pry'
+  spec.add_development_dependency 'pry', '>= 0'
 
   spec.add_runtime_dependency 'aws-sdk', '~> 2'
-  spec.add_runtime_dependency 'mixlib-shellout'
-  spec.add_runtime_dependency 'thor'
+  spec.add_runtime_dependency 'mixlib-shellout', '>= 0'
+  spec.add_runtime_dependency 'thor', '>= 0'
 end
