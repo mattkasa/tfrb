@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    tfrb (0.1.0)
+    tfrb (0.1.1)
       aws-sdk (~> 2)
       mixlib-shellout
       thor
