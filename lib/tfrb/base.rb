@@ -8,16 +8,20 @@ class Tfrb::Base
   attr_accessor :block
   attr_accessor :path
   attr_accessor :temp_path
+  attr_accessor :local_state_path
   attr_accessor :environments
   attr_accessor :state
   attr_accessor :skip_import
+  attr_accessor :dry_run
 
   def initialize(block, environments)
     @skip_import = false
+    @dry_run = false
     @block = block
     @path = Tfrb::Config[:path]
     @temp_path = File.join(Tfrb::Config[:temp_path], block)
     Dir.mkdir(@temp_path) unless Dir.exist?(@temp_path)
+    @local_state_path = File.join(@temp_path, '.terraform', 'local.tfstate')
     @environments = environments.each_with_object({}) do |environment, hash|
       hash[environment] = Tfrb::Block.load(environment)
     end
@@ -44,6 +48,7 @@ class Tfrb::Base
     tf_pullstate = Mixlib::ShellOut.new('terraform', 'state', 'pull', { cwd: temp_path })
     tf_pullstate.run_command
     tf_pullstate.error!
+    File.write(local_state_path, tf_pullstate.stdout) if dry_run
     pulled_state = JSON.parse(tf_pullstate.stdout)
     if pulled_state['modules']
       pulled_state['modules'].each do |state_module|
@@ -76,12 +81,18 @@ class Tfrb::Base
       end
       write!
     end
+    tf_import_args = ['terraform', 'import']
+    if dry_run
+      tf_import_args << "-lock=false"
+      tf_import_args << "-state=#{local_state_path}"
+    end
     providers = @environments.find { |_, e| e['resource'] && e['resource'][resource] && e['resource'][resource][name] && e['resource'][resource][name]['provider'] }
     if providers && provider = providers[1]['resource'][resource][name]['provider']
-      tf_import = Mixlib::ShellOut.new('terraform', 'import', "-provider=#{provider}", "#{resource}.#{name}", id, cwd: temp_path)
-    else
-      tf_import = Mixlib::ShellOut.new('terraform', 'import', "#{resource}.#{name}", id, cwd: temp_path)
+      tf_import_args << "-provider=#{provider}"
     end
+    tf_import_args << "#{resource}.#{name}"
+    tf_import_args << id
+    tf_import = Mixlib::ShellOut.new(*tf_import_args, cwd: temp_path)
     tf_import.run_command
     tf_import.error!
     state[resource] ||= {}
@@ -116,7 +127,14 @@ class Tfrb::Base
 
   def plan!
     printf "\033[1;32mCalculating plan...\033[0m\n"
-    tf_plan = Mixlib::ShellOut.new('terraform', 'plan', '-out=plan.cache', shell_opts)
+    tf_plan_args = ['terraform', 'plan']
+    if dry_run
+      tf_plan_args << "-lock=false"
+      tf_plan_args << "-state=#{local_state_path}"
+    else
+      tf_plan_args << '-out=plan.cache'
+    end
+    tf_plan = Mixlib::ShellOut.new(*tf_plan_args, shell_opts)
     tf_plan.run_command
     tf_plan.error!
   end
@@ -152,7 +170,7 @@ class Tfrb::Base
   end
 
   class << self
-    def load(block, environments, skip_import = false)
+    def load(block, environments, skip_import = false, dry_run = false)
       Tfrb::Resource.load_helpers!
 
       printf "\033[1;32mLoading %s...\033[0m\n", block
@@ -160,6 +178,9 @@ class Tfrb::Base
 
       # Set skip_import
       tfrb.skip_import = skip_import
+
+      # Set dry_run
+      tfrb.dry_run = dry_run
 
       # Clean temporary files before starting
       tfrb.clean!

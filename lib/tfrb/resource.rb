@@ -67,7 +67,9 @@ module Tfrb::Resource
     end
 
     def get_state(base, resource, name)
-      tf_state = Mixlib::ShellOut.new('terraform', 'state', 'show', "#{resource}.#{name}", cwd: base.temp_path)
+      tf_state_args = ['terraform', 'state', 'show', "#{resource}.#{name}"]
+      tf_state_args << "-state=#{base.local_state_path}" if base.dry_run
+      tf_state = Mixlib::ShellOut.new(*tf_state_args, cwd: base.temp_path)
       tf_state.run_command
       tf_state.error!
       tf_state.stdout.split("\n").each_with_object({}) { |line, hash| key, value = line.split(' = '); hash[key.strip] = value }
