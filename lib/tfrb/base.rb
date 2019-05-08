@@ -7,7 +7,6 @@ require 'mixlib/shellout'
 class Tfrb::Base
   attr_accessor :block
   attr_accessor :path
-  attr_accessor :temp_path
   attr_accessor :local_state_path
   attr_accessor :environments
   attr_accessor :state
@@ -21,7 +20,7 @@ class Tfrb::Base
     @path = Tfrb::Config[:path]
     @temp_path = File.join(Tfrb::Config[:temp_path], block)
     Dir.mkdir(@temp_path) unless Dir.exist?(@temp_path)
-    @local_state_path = File.join(@temp_path, '.terraform', 'local.tfstate')
+    @local_state_path = temp_path('.terraform', 'local.tfstate')
     @environments = environments.each_with_object({}) do |environment, hash|
       hash[environment] = Tfrb::Block.load(environment)
     end
@@ -30,9 +29,7 @@ class Tfrb::Base
 
   def write!
     @environments.each do |environment_name, environment|
-      File.open(File.join(temp_path, "#{environment_name}.tf.json"), 'w') do |file|
-        file.write(JSON.pretty_generate(environment, indent: '  '))
-      end
+      File.write(temp_path("#{environment_name}.tf.json"), JSON.pretty_generate(environment, indent: '  '))
     end
   end
 
@@ -144,16 +141,17 @@ class Tfrb::Base
     tf_apply = Mixlib::ShellOut.new('terraform', 'apply', '-auto-approve', 'plan.cache', shell_opts)
     tf_apply.run_command
     tf_apply.error!
-    plan_cache = File.join(temp_path, 'plan.cache')
+    plan_cache = temp_path('plan.cache')
     File.delete(plan_cache) if File.exist?(plan_cache)
   end
 
   def clean!
     %w(*.tf.json).each do |glob|
-      Dir.glob(File.join(temp_path, glob)).each do |file|
+      Dir.glob(temp_path(glob)).each do |file|
         File.delete(file) if File.exist?(file)
       end
     end
+    File.delete(local_state_path) if File.exist?(local_state_path)
   end
 
   def s3_state?
@@ -167,6 +165,10 @@ class Tfrb::Base
       live_stdout: $stdout,
       timeout: 3600
     }
+  end
+
+  def temp_path(*args)
+    File.join(@temp_path, *args)
   end
 
   class << self
@@ -192,7 +194,7 @@ class Tfrb::Base
       tfrb.write!
 
       # Run terraform init if necessary
-      tfrb.init! unless Dir.exist?(File.join(tfrb.temp_path, '.terraform'))
+      tfrb.init! unless Dir.exist?(tfrb.temp_path('.terraform'))
 
       # Load state
       tfrb.load_state!
