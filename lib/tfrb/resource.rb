@@ -37,7 +37,7 @@ module Tfrb::Resource
             unless tfrb.s3_state?
               tfrb.state[resource_type] = {} unless tfrb.state.has_key?(resource_type)
               resources.each do |resource_name, resource|
-                if ::File.exist?(::File.join(tfrb.temp_path, 'terraform.tfstate')) && !tfrb.state[resource_type].has_key?(resource_name)
+                if ::File.exist?(tfrb.temp_path('terraform.tfstate')) && !tfrb.state[resource_type].has_key?(resource_name)
                   printf "\033[1m%s.%s: Loading state...\033[0m\n", resource_type, resource_name
                   state = get_state(tfrb, resource_type, resource_name)
                   tfrb.state[resource_type][resource_name] = state if state && state.keys.size > 0
