@@ -22,6 +22,34 @@ Or install it yourself as:
 
     $ tfrm --help
 
+## Configuration
+
+tfrb is configured using a `tfrb.rb` file in the current working directory where you run `tfrb` similar to:
+
+    ::Tfrb::Config[:environment_name] = 'dev'
+    ::Tfrb::Config[:path] = ::File.join(::File.dirname(::Chef::Config.environment_path), 'infrastructure')
+    ::Tfrb::Config[:temp_path] = ::File.join(::File.dirname(::Chef::Config.environment_path), '.infrastructure')
+    ::Tfrb::Config[:files] = ::Chef::Config[:knife][:infrastructure_environments]
+
+    ::Tfrb::Config[:extra_modules] = [
+      Atlas::Aws,
+      Atlas::Chef
+    ]
+
+    ::Tfrb::Config[:overrides] = {
+      'provider' => {
+        'aws' => {
+          'access_key' => ::Chef::Config[:knife][:aws_access_key_id],
+          'secret_key' => ::Chef::Config[:knife][:aws_secret_access_key],
+          'token' => ::Chef::Config[:knife][:aws_session_token]
+        }
+      },
+      'resource' => {}
+    }
+
+    # Require everything in lib/tfrb/resource/
+    ::Dir[::File.join(::File.dirname(__FILE__), 'lib', 'tfrb', '*', '*.rb')].each { |file| require file }
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.

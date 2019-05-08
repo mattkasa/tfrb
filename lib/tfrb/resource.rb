@@ -113,7 +113,8 @@ module Tfrb::Resource
       {
         region: aws_provider['region'],
         access_key_id: aws_provider['access_key'],
-        secret_access_key: aws_provider['secret_key']
+        secret_access_key: aws_provider['secret_key'],
+        session_token: aws_provider['token']
       }
     end
   end
