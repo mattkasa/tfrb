@@ -136,9 +136,9 @@ class Tfrb::Base
     tf_plan.error!
   end
 
-  def apply!
+  def apply!(parallelism = 1)
     printf "\033[1;32mApplying plan...\033[0m\n"
-    tf_apply = Mixlib::ShellOut.new('terraform', 'apply', '-auto-approve', 'plan.cache', shell_opts)
+    tf_apply = Mixlib::ShellOut.new('terraform', 'apply', "-parallelism=#{parallelism}", '-auto-approve', 'plan.cache', shell_opts)
     tf_apply.run_command
     tf_apply.error!
     plan_cache = temp_path('plan.cache')
