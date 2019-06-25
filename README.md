@@ -20,7 +20,7 @@ Or install it yourself as:
 
 ## Usage
 
-    $ tfrm --help
+    $ tfrb --help
 
 ## Configuration
 

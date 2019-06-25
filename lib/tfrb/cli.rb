@@ -28,9 +28,10 @@ class Tfrb::CLI < Thor
 
   desc 'apply', 'Runs a terraform apply'
   method_option :skip_import, aliases: '-s', type: :boolean, desc: 'Skip automatic terraform import', default: false
+  method_option :parallelism, aliases: '-p', type: :numeric, desc: 'Number of concurrent operations', default: 1
   def apply
     tfrb = load_tfrb(options[:skip_import])
-    tfrb.apply!
+    tfrb.apply!(options[:parallelism])
     tfrb.clean!
   end
 
