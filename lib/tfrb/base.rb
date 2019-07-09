@@ -101,6 +101,13 @@ class Tfrb::Base
     end
   end
 
+  def statemv!(from_resource_id, to_resource_id)
+    printf "\033[1;32mMoving #{from_resource_id} to #{to_resource_id} in state...\033[0m\n"
+    tf_statemv = Mixlib::ShellOut.new('terraform', 'state', 'mv', from_resource_id, to_resource_id, shell_opts)
+    tf_statemv.run_command
+    tf_statemv.error!
+  end
+
   def staterm!(resource_id)
     printf "\033[1;32mRemoving #{resource_id} from state...\033[0m\n"
     tf_staterm = Mixlib::ShellOut.new('terraform', 'state', 'rm', resource_id, shell_opts)
