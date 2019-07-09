@@ -43,6 +43,14 @@ class Tfrb::CLI < Thor
     tfrb.clean!
   end
 
+  desc 'statemv FROM TO', 'Runs a terraform state move'
+  def statemv(from_resource_id, to_resource_id)
+    tfrb = load_tfrb
+    tfrb.skip_import = true
+    tfrb.statemv!(from_resource_id, to_resource_id)
+    tfrb.clean!
+  end
+
   [:staterm, :taint].each do |cmd|
     desc "#{cmd} RESOURCE", "Runs a terraform #{cmd}"
     define_method(cmd) do |resource_id|
